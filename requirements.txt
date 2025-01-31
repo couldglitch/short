@@ -17,6 +17,7 @@ scipy==1.15.0
 six==1.17.0
 standard-aifc==3.13.0
 standard-chunk==3.13.0
+gunicorn
 threadpoolctl==3.5.0
 typing_extensions==4.12.2
 tzdata==2024.2
