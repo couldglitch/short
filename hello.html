@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Short URL Generator</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        header {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            padding: 20px 10px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        header p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.5;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Container Styles */
+        .container {
+            max-width: 500px;
+            width: 100%;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin: 20px;
+            flex-grow: 1;
+        }
+
+        /* Logo Styles */
+        .logo {
+            margin-bottom: 20px;
+        }
+
+        .logo img {
+            max-width: 150px; /* Adjust the size of your logo */
+            height: auto;
+        }
+
+        /* Heading Styles */
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        /* Input and Button Styles */
+        input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 95%;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Result and Key Display Styles */
+        #result {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #4CAF50;
+            width: 95%;
+            text-align: center; /* Center align the result text */
+        }
+
+        #keyDisplay {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #efefef;
+            border-radius: 5px;
+            word-break: break-all;
+            display: none; /* Initially hidden */
+            width: 90%;
+            border: none;
+            margin-left: 8px;
+
+        }
+
+        #copyButton {
+            margin-top: 10px;
+            background-color: #28a745;
+            display: none; /* Initially hidden */
+            margin-left: 100px;
+            width: 50%;
+           
+        }
+
+        #copyButton:hover {
+            background-color: #218838;
+        }
+
+        /* Footer Styles */
+        footer {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: auto;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        footer p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            header p {
+                font-size: 14px;
+                padding: 0 10px;
+            }
+
+            .container {
+                padding: 15px;
+                margin: 10px;
+            }
+
+            input, button {
+                font-size: 14px;
+            }
+
+            .logo img {
+                max-width: 120px; /* Smaller logo for mobile */
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            footer p {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header p {
+                font-size: 12px;
+            }
+
+            .container {
+                padding: 10px;
+                margin: 5px;
+            }
+
+            input, button {
+                font-size: 12px;
+                padding: 8px;
+            }
+
+            .logo img {
+                max-width: 100px; /* Even smaller logo for very small screens */
+            }
+
+            h2 {
+                font-size: 18px;
+            }
+
+            footer p {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+    <p>Shorturl is a free tool to shorten URLs and generate short links. URL shortener allows you to create a shortened link, making it easy to share.</p>
+</header>
+
+<!-- Main Content -->
+<div class="container">
+    <!-- Company Logo -->
+    <div class="logo">
+        <img src="Logo.png" alt="Company Logo"> <!-- Replace with your logo -->
+    </div>
+
+    <h2>Generate Short URLs Instantly</h2>
+    <input type="text" id="name" placeholder="Enter your long URL" required>
+    <button id="submitButton">Generate Short URL</button>
+
+    <div id="result"></div>
+    <div id="keyDisplay" contenteditable="true"></div>
+    <button id="copyButton" onclick="copyKey()">Copy Short URL</button>
+</div>
+
+<!-- Footer -->
+<footer>
+    <p>&copy; 2025 Short URL Generator. All rights reserved.</p>
+</footer>
+
+<script>
+    document.getElementById('submitButton').addEventListener('click', function() {
+        const name = document.getElementById('name').value;
+
+        // Validate URL
+        if (!isValidURL(name)) {
+            alert('Please enter a valid URL.');
+            return;
+        }
+
+        // Prepare data to send
+        const data = new URLSearchParams();
+        data.append('name', name);
+
+        // Send data to Google Sheets
+        fetch('https://script.google.com/macros/s/AKfycbxqw6PD2GW4ektUCs36ZMPKYhECKuVdh76YBczDIZ4S8oqWluSMJBR0266jblHUJG37Rg/exec', { // Replace with your deployed web app URL
+            method: 'POST',
+            body: data
+        })
+        .then(response => response.text())
+        .then(result => {
+            document.getElementById('result').innerText = "Short URL generated successfully!";
+            const key = result.split(": ")[1]; // Extract the key from the response
+            const keyDisplay = document.getElementById('keyDisplay');
+            keyDisplay.innerText = key; // Display the generated key
+            keyDisplay.style.display = 'block'; // Show the key display area
+            document.getElementById('copyButton').style.display = 'block'; // Show the copy button document.getElementById('name').value = ''; // Clear the input field after submission
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('result').innerText = "An error occurred. Please try again.";
+        });
+    });
+
+    function isValidURL(string) {
+        const res = string.match(/(https?:\/\/[^\s]+)/g);
+        return (res !== null);
+    }
+
+    function copyKey() {
+        const keyDisplay = document.getElementById('keyDisplay');
+        const range = document.createRange();
+        range.selectNode(keyDisplay);
+        window.getSelection().removeAllRanges(); // Clear previous selections
+        window.getSelection().addRange(range); // Select the key text
+        document.execCommand('copy'); // Copy the selected text
+        window.getSelection().removeAllRanges(); // Deselect the text
+        alert('Short URL copied to clipboard: ' + keyDisplay.innerText); // Alert user
+    }
+</script>
+
+</body>
+</html>
