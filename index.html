@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL Shortener – Inspector‑Protected</title>
+    <title>CeoTech URL Shortener</title>
     <style>
         body, html {margin:0;padding:0;height:100%;font-family:Arial,sans-serif;overflow:hidden;}
-        #app {max-width:420px;margin:50px auto;padding:20px;background:#fafafa;height:auto;}
+        #app {max-width:420px;margin:50px auto;padding:20px;background:#fafafa;}
         input[type="url"] {width:100%;padding:10px;margin:10px 0;box-sizing:border-box;}
         button {width:100%;padding:10px;background:#4285f4;color:#fff;border:none;cursor:pointer;margin-top:5px;}
         button:hover {background:#3367d6;}
@@ -16,7 +16,17 @@
         .qr img {max-width:150px;border:1px solid #ccc;pointer-events:none;}
         .copy-btn,.gen-btn,.dl-btn {width:auto;display:inline-block;padding:6px 12px;font-size:0.9rem;margin:5px 2px;}
 
-        /* Full‑screen blocker */
+        /* 404 Page */
+        #notFound {
+            display:none;flex-direction:column;justify-content:center;align-items:center;
+            height:100vh;background:#f8f8f8;color:#333;text-align:center;padding:20px;
+        }
+        #notFound h1 {font-size:3rem;margin:0;color:#d32f2f;}
+        #notFound p {font-size:1.2rem;margin:10px 0;}
+        #notFound a {color:#4285f4;text-decoration:none;font-weight:bold;}
+        #notFound a:hover {text-decoration:underline;}
+
+        /* DevTools Blocker */
         #blocker {
             position:fixed;top:0;left:0;width:100vw;height:100vh;
             background:#000;color:#fff;display:none;flex-direction:column;
@@ -28,7 +38,15 @@
 </head>
 <body>
 
-<!-- MAIN APP (hidden when inspector is open) -->
+<!-- 404 PAGE -->
+<div id="notFound">
+    <h1>404</h1>
+    <p><strong>Not Found</strong></p>
+    <p>This link does not exist.</p>
+    <p><a href="/">← Go back to URL Shortener</a></p>
+</div>
+
+<!-- MAIN APP -->
 <div id="app">
     <h1>Enter Long URL to Shorten</h1>
     <form id="urlForm">
@@ -36,11 +54,10 @@
         <input type="url" id="url" name="url" placeholder="https://example.com/very-long-url" required>
         <button type="submit">Generate Short Code</button>
     </form>
-
     <div id="result"></div>
 </div>
 
-<!-- FULL‑PAGE BLOCKER -->
+<!-- DEVTOOLS BLOCKER -->
 <div id="blocker">
     <h2>Developer Tools Detected</h2>
     <p>Please close the inspector to continue.</p>
@@ -53,15 +70,16 @@ const baseUrl    = location.origin;
 const qrFileName = 'ceotech-url.png';
 /* --------------------------- */
 
-const app     = document.getElementById('app');
-const blocker = document.getElementById('blocker');
-const form    = document.getElementById('urlForm');
-const result  = document.getElementById('result');
+const app        = document.getElementById('app');
+const notFound   = document.getElementById('notFound');
+const blocker    = document.getElementById('blocker');
+const form       = document.getElementById('urlForm');
+const result     = document.getElementById('result');
 
 let devtoolsOpen = false;
 const THRESHOLD = 160;
 
-/* ---------- ANTI‑INSPECTOR ---------- */
+/* ---------- ANTI-INSPECTOR ---------- */
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.onkeydown = e => {
     if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 67))) return false;
@@ -73,24 +91,65 @@ const detect = () => {
     return w || h;
 };
 
-const check = () => {
+const checkDevtools = () => {
     const open = detect();
     if (open !== devtoolsOpen) {
         devtoolsOpen = open;
         if (open) {
             app.style.display = 'none';
+            notFound.style.display = 'none';
             blocker.classList.add('show');
         } else {
-            app.style.display = 'block';
             blocker.classList.remove('show');
+            if (location.search.startsWith('?code=')) {
+                handleRedirect();
+            } else {
+                app.style.display = 'block';
+            }
         }
     }
 };
 
-setInterval(check, 400);
-window.addEventListener('resize', check);
+setInterval(checkDevtools, 400);
+window.addEventListener('resize', checkDevtools);
 
-/* ---------- MAIN LOGIC ---------- */
+/* ---------- REDIRECT LOGIC ---------- */
+function handleRedirect() {
+    const params = new URLSearchParams(location.search);
+    const code = params.get('code');
+    if (!code) {
+        app.style.display = 'block';
+        return;
+    }
+
+    app.innerHTML = '<p>Redirecting...</p>';
+    app.style.display = 'block';
+
+    fetch(`${webAppUrl}?action=get&code=${encodeURIComponent(code)}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.url) {
+                window.location = data.url;
+            } else {
+                show404();
+            }
+        })
+        .catch(() => show404());
+}
+
+function show404() {
+    app.style.display = 'none';
+    notFound.style.display = 'flex';
+}
+
+/* ---------- INITIAL LOAD ---------- */
+if (location.search.startsWith('?code=')) {
+    handleRedirect();
+} else {
+    app.style.display = 'block';
+}
+
+/* ---------- SHORTENER LOGIC ---------- */
 form.addEventListener('submit', async e => {
     e.preventDefault();
     const longUrl = document.getElementById('url').value.trim();
@@ -129,7 +188,7 @@ form.addEventListener('submit', async e => {
             </div>
         `;
 
-        /* Copy URL */
+        // Copy URL
         result.querySelectorAll('.copy-btn').forEach(b => {
             b.onclick = () => {
                 navigator.clipboard.writeText(b.dataset.clipboardText).then(() => {
@@ -140,15 +199,15 @@ form.addEventListener('submit', async e => {
             };
         });
 
-        /* Show QR */
+        // Show QR
         document.getElementById('genQr').onclick = () => {
             document.getElementById('qrContainer').style.display = 'block';
             document.getElementById('genQr').style.display = 'none';
         };
 
-        /* Download QR – no redirect */
+        // Download QR
         document.getElementById('downloadQr').onclick = () => {
-            if (devtoolsOpen) return alert('Download blocked while DevTools is open.');
+            if (devtoolsOpen) return alert('Download blocked.');
             fetch(qrUrl)
                 .then(r => r.blob())
                 .then(blob => {
